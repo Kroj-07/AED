@@ -17,7 +17,7 @@ struct LinkedNode {
         next = nullptr;
     }
 
-    LinkedNode(data_type data, LinkedNode<data_type>* next = nullptr) : data(data), next(next) {}
+    LinkedNode(long long exp, long long coef, LinkedNode<data_type>* next = nullptr) : exp(exp), coef(coef), next(next) {}
 };
 
 template<typename data_type>
@@ -39,12 +39,12 @@ struct LinkedList {
         head = new_node;
     }
 
-    void push_back(data_type value) {
+    void push_back(long long x, long long y) {
         if (tail == nullptr) {
-            head = tail = new LinkedNode<data_type>(value);
+            head = tail = new LinkedNode<data_type>(x,y);
         }
         else {
-            tail -> next = new LinkedNode<data_type>(value);
+            tail -> next = new LinkedNode<data_type>(x,y);
             tail = tail -> next;
         }
     }
@@ -71,9 +71,15 @@ struct LinkedList {
             insert(current, value);
         }
     }
-    void add(int x, int y){{
 
-    }}
+    LinkedList<data_type> copy(LinkedList<data_type>& r, LinkedList<data_type>& q){
+        while (q!=nullptr){
+            r.push_back(q->exp, q->coef);
+            q=q->next;
+        }
+        return r;
+    }
+
 
     void pop_front() {
         LinkedNode<data_type>* current = head;
@@ -107,42 +113,89 @@ struct LinkedList {
 
     void print() {
         LinkedNode<data_type>* current = head;
+        int count=0;
+
         while (current != nullptr) {
-            cout << current -> data << " ";
+            count ++;
             current = current -> next;
         }
-        cout << '\n';
+        cout <<count<< '\n';
+
+        current=head;
+        while (current != nullptr) {
+            cout << current -> exp << " " << current -> coef << endl;
+            current = current -> next;}
     }
 
     
 };
 
-LinkedList<int>(LinkedList<int>& p, LinkedList<int>& q ){
-    LinkedList<int> R;
-    for(int i=0; i<)
-    if (p->exp>q->exp){
-        R.insert(q->exp, q->coef)
+
+    LinkedList<long long> sum(LinkedList<long long>& P, LinkedList<long long>& Q ){
+        LinkedNode<long long>* p=P.head;
+        LinkedNode<long long>* q=Q.head;
+        LinkedList<long long> R;
+        while (p!=nullptr&&q!=nullptr){
+            if (p->exp>q->exp){
+                R.push_back(q->exp, q->coef);
+                q=q->next;
+            }
+            else if(p->exp<q->exp){
+                R.push_back(p->exp, p->coef);
+                p=p->next;
+            }
+            else{
+                long long coef = p->coef + q->coef;
+
+                if (coef != 0) {
+                    R.push_back(p->exp, coef);
+                }
+                p=p->next;
+                q=q->next;
+            }
+            
+        }
+        while (p!=nullptr){
+            R.push_back(p->exp, p->coef);
+            p=p->next;
+        }
+        while (q!=nullptr){
+            R.push_back(q->exp, q->coef);
+            q=q->next;
+        }
+        return R;
+
+
     }
-}
+
+
 
 int main() {
-    LinkedList<int> L;
-    int n, q;
-    cin >> n >> q;
-    for (int i = 0; i < q; ++i) {
-        string op;
-        cin >> op;
-        if (op[0] == 'I') {
-            int k, x;
-            cin >> k >> x;
-            L.insert(k, x);
-        }
-        else {
-            int k;
-            cin >> k;
-            L.erase(k);
-        }
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n1;
+    cin >> n1;
+
+    LinkedList<long long> P;
+    for (int i=0; i<n1; i++){
+        long long x, y;
+        cin >> x >> y;
+        P.push_back(x, y);
     }
-    L.print();
+
+    int n2;
+    cin >> n2;
+    LinkedList<long long> Q;
+    for(int i=0; i<n2; i++){
+        long long x, y;
+        cin >> x >> y;
+        Q.push_back(x, y);
+    }
+
+    
+
+    LinkedList<long long> R = sum(P, Q);
+    R.print();
     return 0;
 }

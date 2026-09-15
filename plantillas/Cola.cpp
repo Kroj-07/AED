@@ -8,7 +8,7 @@ using namespace std;
 
 class Cola {
 private:
-    int datos[100];
+    int datos[1000];
     int frente;
     int final;
 
@@ -23,7 +23,7 @@ public:
     }
 
     bool estaLlena() {
-        return final == 99;
+        return final == 999;
     }
 
     void enqueue(int valor) {
