@@ -1,30 +1,125 @@
+/*
+===============================================================================
+  SOLUCIÓN UNIFICADA: PROBLEMAS F Y G (ÁRBOLES BINARIOS DE BÚSQUEDA)
+===============================================================================
+
+  Este archivo contiene la solución a dos problemas que giran en torno al mismo
+  TDA: Árbol Binario de Búsqueda (ABB) sin balanceo. Se implementan las
+  operaciones clásicas vistas en clase: inserción, búsqueda, sucesor,
+  predecesor, eliminación (con Transplantar) y recorrido inorder.
+
+  El programa lee primero los datos del Problema F y luego los del Problema G,
+  tal como se describe en sus respectivos enunciados.
+
+  -----------------------------------------------------------------------------
+  PATRÓN COMÚN EN PROBLEMAS DE ABB
+  -----------------------------------------------------------------------------
+  - Se construye un ABB insertando valores en un orden dado.
+  - Se mantienen punteros: izquierdo, derecho y padre.
+  - Muchas consultas se resuelven navegando el árbol usando estos punteros.
+  - El sucesor/predecesor se calcula en O(h), donde h es la altura.
+  - La eliminación requiere la operación auxiliar Transplantar para mover
+    subárboles.
+  - El recorrido inorder devuelve los valores ordenados ascendentemente.
+  - Si el árbol degenera (insertar ordenado), la altura es O(n) y las
+    operaciones cuestan O(n). Esto es esperado y aceptable para n ≤ 5000.
+  - Para problemas similares, identificar si se pide: inserción, búsqueda,
+    eliminación, sucesor, predecesor, recorrido inorder, etc. Implementar
+    las funciones correspondientes con punteros padre.
+
+===============================================================================
+  PROBLEMA F: SUCESOR Y PREDECESOR
+===============================================================================
+  ENUNCIADO:
+  Se insertan n enteros distintos en un ABB. Luego, para cada consulta x
+  (garantizado presente), se debe reportar su predecesor y sucesor en el
+  recorrido inorder. Si no existe, imprimir NONE.
+
+  LÓGICA:
+  1. Insertar los n valores en el ABB (algoritmo estándar).
+  2. Para cada consulta x, buscar el nodo que contiene x.
+  3. Sucesor de un nodo u:
+     - Si u tiene subárbol derecho, el sucesor es el mínimo de ese subárbol
+       (bajar siempre por la izquierda desde u->right).
+     - Si no tiene subárbol derecho, subir por los punteros de padre hasta
+       encontrar el primer ancestro del cual se viene desde un hijo izquierdo.
+       Ese ancestro es el sucesor. Si se llega a la raíz subiendo siempre
+       desde un hijo derecho, no hay sucesor.
+  4. Predecesor: simétrico (intercambiar izquierda por derecha).
+  5. Imprimir predecesor y sucesor, o NONE.
+
+  COMPLEJIDAD:
+  - Construcción: O(n * h) en peor caso O(n^2) si degenera.
+  - Cada consulta: O(h) en peor caso O(n).
+  Con n, q ≤ 5000, es suficiente.
+
+===============================================================================
+  PROBLEMA G: ELIMINAR NODOS
+===============================================================================
+  ENUNCIADO:
+  Simular un ABB inicialmente vacío. Procesar m operaciones:
+  - INSERTAR x: inserta x (garantizado no presente).
+  - ELIMINAR x: elimina x (garantizado presente).
+  - EXISTE x: consulta si x está presente.
+  Por cada EXISTE, imprimir SI o NO.
+  Al final, imprimir el recorrido inorder del árbol resultante (o VACIO).
+
+  LÓGICA:
+  1. Implementar ABB con punteros (padre, izquierdo, derecho).
+  2. Inserción: algoritmo estándar.
+  3. Búsqueda: para EXISTE y para localizar nodo a eliminar.
+  4. Eliminación: algoritmo clásico con Transplantar.
+     - Caso 1: nodo sin hijo izquierdo -> Transplantar(z, z->right).
+     - Caso 2: nodo sin hijo derecho -> Transplantar(z, z->left).
+     - Caso 3: dos hijos -> buscar sucesor y = mínimo(z->right).
+       Si y->parent != z, Transplantar(y, y->right), y->right = z->right,
+       y->right->parent = y. Luego Transplantar(z, y), y->left = z->left,
+       y->left->parent = y.
+  5. Tras procesar todo, recorrido inorder recursivo. Si vacío, VACIO.
+
+  COMPLEJIDAD:
+  - Cada operación: O(h) en peor caso O(m).
+  - Total: O(m^2) en peor caso. Con m ≤ 5000, aceptable.
+  - Recorrido inorder: O(m).
+
+===============================================================================
+  IMPLEMENTACIÓN
+===============================================================================
+*/
+
 #include <bits/stdc++.h>
 using namespace std;
 
+// Estructura de nodo para ABB con puntero al padre.
 struct Node {
     int val;
     Node *left, *right, *parent;
     Node(int v) : val(v), left(nullptr), right(nullptr), parent(nullptr) {}
 };
 
-// ==================== F ====================
-Node* insertF(Node* root, int val) {
-    Node* newNode = new Node(val);
-    if (!root) return newNode;
+// ============================================================================
+// FUNCIONES AUXILIARES COMUNES
+// ============================================================================
+
+// Inserción estándar en ABB. Devuelve la raíz (posiblemente nueva).
+Node* insertar(Node* root, int val) {
+    Node* nuevo = new Node(val);
+    if (!root) return nuevo;
     Node* cur = root;
-    Node* parent = nullptr;
+    Node* padre = nullptr;
     while (cur) {
-        parent = cur;
+        padre = cur;
         if (val < cur->val) cur = cur->left;
         else cur = cur->right;
     }
-    newNode->parent = parent;
-    if (val < parent->val) parent->left = newNode;
-    else parent->right = newNode;
+    nuevo->parent = padre;
+    if (val < padre->val) padre->left = nuevo;
+    else padre->right = nuevo;
     return root;
 }
 
-Node* searchF(Node* root, int val) {
+// Búsqueda de un valor. Devuelve el nodo o nullptr.
+Node* buscar(Node* root, int val) {
     while (root && root->val != val) {
         if (val < root->val) root = root->left;
         else root = root->right;
@@ -32,36 +127,43 @@ Node* searchF(Node* root, int val) {
     return root;
 }
 
-Node* minimumF(Node* node) {
+// Mínimo de un subárbol.
+Node* minimo(Node* node) {
     while (node->left) node = node->left;
     return node;
 }
 
-Node* maximumF(Node* node) {
+// Máximo de un subárbol.
+Node* maximo(Node* node) {
     while (node->right) node = node->right;
     return node;
 }
 
-Node* successorF(Node* node) {
-    if (node->right) return minimumF(node->right);
-    Node* parent = node->parent;
-    while (parent && node == parent->right) {
-        node = parent;
-        parent = parent->parent;
+// Sucesor de un nodo (siguiente en inorder).
+Node* sucesor(Node* node) {
+    if (node->right) return minimo(node->right);
+    Node* padre = node->parent;
+    while (padre && node == padre->right) {
+        node = padre;
+        padre = padre->parent;
     }
-    return parent;
+    return padre;
 }
 
-Node* predecessorF(Node* node) {
-    if (node->left) return maximumF(node->left);
-    Node* parent = node->parent;
-    while (parent && node == parent->left) {
-        node = parent;
-        parent = parent->parent;
+// Predecesor de un nodo (anterior en inorder).
+Node* predecesor(Node* node) {
+    if (node->left) return maximo(node->left);
+    Node* padre = node->parent;
+    while (padre && node == padre->left) {
+        node = padre;
+        padre = padre->parent;
     }
-    return parent;
+    return padre;
 }
 
+// ============================================================================
+// PROBLEMA F: SUCESOR Y PREDECESOR
+// ============================================================================
 void solveF() {
     int n;
     cin >> n;
@@ -69,51 +171,32 @@ void solveF() {
     for (int i = 0; i < n; ++i) {
         int x;
         cin >> x;
-        root = insertF(root, x);
+        root = insertar(root, x);
     }
     int q;
     cin >> q;
     while (q--) {
         int x;
         cin >> x;
-        Node* node = searchF(root, x);
-        Node* pred = predecessorF(node);
-        Node* succ = successorF(node);
+        Node* nodo = buscar(root, x);
+        Node* pred = predecesor(nodo);
+        Node* suc = sucesor(nodo);
         if (pred) cout << pred->val;
         else cout << "NONE";
         cout << ' ';
-        if (succ) cout << succ->val;
+        if (suc) cout << suc->val;
         else cout << "NONE";
         cout << '\n';
     }
 }
 
-// ====================  G ====================
-Node* insertG(Node* root, int val) {
-    Node* newNode = new Node(val);
-    if (!root) return newNode;
-    Node* cur = root;
-    Node* parent = nullptr;
-    while (cur) {
-        parent = cur;
-        if (val < cur->val) cur = cur->left;
-        else cur = cur->right;
-    }
-    newNode->parent = parent;
-    if (val < parent->val) parent->left = newNode;
-    else parent->right = newNode;
-    return root;
-}
+// ============================================================================
+// PROBLEMA G: ELIMINAR NODOS
+// ============================================================================
 
-Node* searchG(Node* root, int val) {
-    while (root && root->val != val) {
-        if (val < root->val) root = root->left;
-        else root = root->right;
-    }
-    return root;
-}
-
-Node* transplantG(Node* root, Node* u, Node* v) {
+// Transplantar: reemplaza el subárbol con raíz u por el subárbol con raíz v.
+// Devuelve la nueva raíz del árbol (puede cambiar si u era la raíz).
+Node* transplantar(Node* root, Node* u, Node* v) {
     if (!u->parent) root = v;
     else if (u == u->parent->left) u->parent->left = v;
     else u->parent->right = v;
@@ -121,24 +204,20 @@ Node* transplantG(Node* root, Node* u, Node* v) {
     return root;
 }
 
-Node* treeMinimumG(Node* x) {
-    while (x->left) x = x->left;
-    return x;
-}
-
-Node* deleteG(Node* root, Node* z) {
+// Eliminar un nodo z del ABB. Devuelve la nueva raíz.
+Node* eliminar(Node* root, Node* z) {
     if (!z->left) {
-        root = transplantG(root, z, z->right);
+        root = transplantar(root, z, z->right);
     } else if (!z->right) {
-        root = transplantG(root, z, z->left);
+        root = transplantar(root, z, z->left);
     } else {
-        Node* y = treeMinimumG(z->right);
+        Node* y = minimo(z->right); // sucesor
         if (y->parent != z) {
-            root = transplantG(root, y, y->right);
+            root = transplantar(root, y, y->right);
             y->right = z->right;
             y->right->parent = y;
         }
-        root = transplantG(root, z, y);
+        root = transplantar(root, z, y);
         y->left = z->left;
         y->left->parent = y;
     }
@@ -146,11 +225,12 @@ Node* deleteG(Node* root, Node* z) {
     return root;
 }
 
-void inorderG(Node* root, vector<int>& res) {
+// Recorrido inorder recursivo.
+void inorder(Node* root, vector<int>& res) {
     if (!root) return;
-    inorderG(root->left, res);
+    inorder(root->left, res);
     res.push_back(root->val);
-    inorderG(root->right, res);
+    inorder(root->right, res);
 }
 
 void solveG() {
@@ -163,17 +243,17 @@ void solveG() {
         int x;
         cin >> x;
         if (op == "INSERTAR") {
-            root = insertG(root, x);
+            root = insertar(root, x);
         } else if (op == "ELIMINAR") {
-            Node* z = searchG(root, x);
-            if (z) root = deleteG(root, z);
+            Node* z = buscar(root, x);
+            if (z) root = eliminar(root, z);
         } else if (op == "EXISTE") {
-            Node* z = searchG(root, x);
+            Node* z = buscar(root, x);
             cout << (z ? "SI" : "NO") << '\n';
         }
     }
     vector<int> res;
-    inorderG(root, res);
+    inorder(root, res);
     if (res.empty()) {
         cout << "VACIO\n";
     } else {
@@ -185,13 +265,18 @@ void solveG() {
     }
 }
 
+// ============================================================================
+// MAIN
+// ============================================================================
 int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
-    
+
+    // Ejecutar Problema F (lee su entrada y produce su salida)
     solveF();
-    
+
+    // Ejecutar Problema G (lee su entrada y produce su salida)
     solveG();
-    
+
     return 0;
 }

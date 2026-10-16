@@ -1,8 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-#include <ext/pb_ds/assoc_container.hpp>
-using namespace __gnu_pbds;
 
 template<typename key_type, typename value_type>
 struct my_map {
